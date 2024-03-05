@@ -1,4 +1,7 @@
 // https://github.com/marcosaraujomvma/proj-sprayed-smart
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+
 
 
 //flow sensor
@@ -22,10 +25,25 @@
 #define echoPin3 13
 #define pulseDuration 0.0034 //  constant representing the time it takes for sound to travel one centimeter in the air
 
+//GPS Sensor
+#define RXPin 14;
+#define TXPin 15;
+
+static const uint32_t GPSBaud = 9600;   // Baudrate of the GPS module
 
 
+//start Variables
 float pressure, flow1, flow2, flow3, flow4, level;
 long duration1, distance1, duration2, distance2, duration3, distance3;
+
+
+//Start GPS use
+
+// Create a TinyGPS++ object
+TinyGPSPlus gps;
+
+// Create a SoftwareSerial object to communicate with the GPS module
+SoftwareSerial ss(RXPin, TXPin);
 
 
 void setup() {
@@ -44,6 +62,8 @@ void setup() {
   pinMode(echoPin2, INPUT);
   pinMode(trigPin3, OUTPUT);
   pinMode(echoPin3, INPUT);
+
+  ss.begin(GPSBaud); 
 
 }
 
@@ -148,7 +168,7 @@ void loop() {
   } else {
     Serial.println("No position");
   }
-  
+
   float x = (distance1 * distance1 - distance2 * distance2 + 10000) / 200;
   float y = (distance1 * distance1 - distance3 * distance3 + 10000) / 200;
 
@@ -157,7 +177,28 @@ void loop() {
   Serial.print(", ");
   Serial.println(y);
   // Relative Position Block
-
-
   delay (1000)
+
+  //GPS Position Block
+
+  while (ss.available() > 0) {
+    if (gps.encode(ss.read())) {
+      if (gps.location.isValid()) {
+        // Get latitude and longitude
+        double latitude = gps.location.lat();
+        double longitude = gps.location.lng();
+
+        // Print latitude and longitude
+        Serial.print("Latitude: ");
+        Serial.println(latitude, 6);
+        Serial.print("Longitude: ");
+        Serial.println(longitude, 6);
+      } else {
+        Serial.println("GPS signal not valid");
+      }
+    }
+  }
+
+  //GPS Position Block end
+
 }
