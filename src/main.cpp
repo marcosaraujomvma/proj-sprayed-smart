@@ -1,8 +1,14 @@
 // https://github.com/marcosaraujomvma/proj-sprayed-smart
-#include <TinyGPS++.h>
+//#include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 
-
+//Editado-Gabriel
+#include <WiFi.h>
+#include "HTTPClient.h"
+const char* ssid = "REPLACE_WITH_YOUR_SSID";
+const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+String serverName = "http://192.168.1.106:1880/update-sensor";
+//Fim-Editado-Gabriel
 
 //flow sensor
 #define flow_PIN1 2  // Flow Sensor Pin 1
@@ -45,6 +51,45 @@ TinyGPSPlus gps;
 // Create a SoftwareSerial object to communicate with the GPS module
 SoftwareSerial ss(RXPin, TXPin);
 
+//Editado-Gabriel
+void sendMessage(String typeData, float floatValue, long longValue, bool isFloat) {
+    //Check WiFi connection status
+    if(WiFi.status()== WL_CONNECTED){
+      HTTPClient http;
+      if (isFloat){
+        String serverPath = serverName + "?"+ typeData + "=" + String(floatValue);
+      }else{
+        String serverPath = serverName + "?"+ typeData + "=" + String(longValue);
+      }
+      
+      // Your Domain name with URL path or IP address with path
+      http.begin(serverPath.c_str());
+      
+      // If you need Node-RED/server authentication, insert user and password below
+      //http.setAuthorization("REPLACE_WITH_SERVER_USERNAME", "REPLACE_WITH_SERVER_PASSWORD");
+      
+      // Send HTTP GET request
+      int httpResponseCode = http.GET();
+      
+      if (httpResponseCode>0) {
+        Serial.print("HTTP Response code: ");
+        Serial.println(httpResponseCode);
+        String payload = http.getString();
+        Serial.println(payload);
+      }
+      else {
+        Serial.print("Error code: ");
+        Serial.println(httpResponseCode);
+      }
+      // Free resources
+      http.end();
+    }
+    else {
+      Serial.println("WiFi Disconnected");
+    }
+}
+//Fim-Editado-Gabriel
+
 
 void setup() {
   Serial.begin(9600);
@@ -65,6 +110,18 @@ void setup() {
 
   ss.begin(GPSBaud); 
 
+//Editado-Gabriel
+WiFi.begin(ssid, password);
+  Serial.println("Connecting");
+  while(WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to WiFi network with IP Address: ");
+  Serial.println(WiFi.localIP());
+//FIM-Editado-Gabriel
+
 }
 
 void loop() {
@@ -76,6 +133,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 01 = ");
   Serial.print(flow1);
+  sendMessage("flow1", flow1, 0, true);
   }
   delay(1000); // wait 1s
 
@@ -85,6 +143,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 02 = ");
   Serial.print(flow2);
+  sendMessage("flow2", flow2, 0, true);
   }
   delay(1000); // wait 1s
 
@@ -94,6 +153,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 03 = ");
   Serial.print(flow3);
+  sendMessage("flow3", flow3, 0, true);
   }
   delay(1000); // wait 1s
 
@@ -103,17 +163,20 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 04 = ");
   Serial.print(flow4);
+  sendMessage("flow4", flow4, 0, true);
   }
   delay(1000); // wait 1s
 
   pressure = (map(analogRead(pressure_PIN),0,1023,0,255)) * pressureRateConverter; // Pressure Bar
   Serial.print("Pressure = ");
   Serial.print(pressure);
+  sendMessage("pressure", pressure, 0, true);
   delay(1000); // wait 1s
 
   level = map(analogRead(level_PIN),0,100,0,255)
   Serial.print("Level = ");
   Serial.print(level);
+  sendMessage("level", level, 0, true);
   delay(1000); // wait 1s
 
   //Sensors Block End
@@ -148,14 +211,17 @@ void loop() {
   Serial.print("Distance from Sensor 1: ");
   Serial.print(distance1);
   Serial.println(" cm");
+  sendMessage("distance1", 0, distance1, false);
 
   Serial.print("Distance from Sensor 2: ");
   Serial.print(distance2);
   Serial.println(" cm");
+  sendMessage("distance2", 0, distance2, false);
 
   Serial.print("Distance from Sensor 3: ");
   Serial.print(distance3);
   Serial.println(" cm");
+  sendMessage("distance3", 0, distance3, false);
   //Sensors localization Block end
 
   //Relative Position Block
