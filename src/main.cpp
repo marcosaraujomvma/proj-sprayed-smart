@@ -1,10 +1,10 @@
 // https://github.com/marcosaraujomvma/proj-sprayed-smart
-//#include <TinyGPS++.h>
+#include <TinyGPS++.h>
 #include <SoftwareSerial.h>
 
 //Editado-Gabriel
 #include <WiFi.h>
-#include "HTTPClient.h"
+#include <HTTPClient.h>
 const char* ssid = "REPLACE_WITH_YOUR_SSID";
 const char* password = "REPLACE_WITH_YOUR_PASSWORD";
 String serverName = "http://192.168.1.106:1880/update-sensor";
@@ -52,15 +52,16 @@ TinyGPSPlus gps;
 SoftwareSerial ss(RXPin, TXPin);
 
 //Editado-Gabriel
-void sendMessage(String typeData, float floatValue, long longValue, bool isFloat) {
+void sendMessage(String typeData, String value) {
     //Check WiFi connection status
     if(WiFi.status()== WL_CONNECTED){
       HTTPClient http;
       if (isFloat){
-        String serverPath = serverName + "?"+ typeData + "=" + String(floatValue);
+        String serverPath = serverName + "?"+ typeData + "=" + value;
       }else{
-        String serverPath = serverName + "?"+ typeData + "=" + String(longValue);
+        String serverPath = serverName + "?"+ typeData + "=" + value;
       }
+
       
       // Your Domain name with URL path or IP address with path
       http.begin(serverPath.c_str());
@@ -133,7 +134,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 01 = ");
   Serial.print(flow1);
-  sendMessage("flow1", flow1, 0, true);
+  sendMessage("flow1", String(flow1));
   }
   delay(1000); // wait 1s
 
@@ -143,7 +144,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 02 = ");
   Serial.print(flow2);
-  sendMessage("flow2", flow2, 0, true);
+  sendMessage("flow2", String(flow2));
   }
   delay(1000); // wait 1s
 
@@ -153,7 +154,7 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 03 = ");
   Serial.print(flow3);
-  sendMessage("flow3", flow3, 0, true);
+  sendMessage("flow3", String(flow3));
   }
   delay(1000); // wait 1s
 
@@ -163,20 +164,20 @@ void loop() {
   }else{
   Serial.print("Flow Sensor 04 = ");
   Serial.print(flow4);
-  sendMessage("flow4", flow4, 0, true);
+  sendMessage("flow4", String(flow4));
   }
   delay(1000); // wait 1s
 
   pressure = (map(analogRead(pressure_PIN),0,1023,0,255)) * pressureRateConverter; // Pressure Bar
   Serial.print("Pressure = ");
   Serial.print(pressure);
-  sendMessage("pressure", pressure, 0, true);
+  sendMessage("pressure", String(pressure));
   delay(1000); // wait 1s
 
   level = map(analogRead(level_PIN),0,100,0,255)
   Serial.print("Level = ");
   Serial.print(level);
-  sendMessage("level", level, 0, true);
+  sendMessage("level", String(level));
   delay(1000); // wait 1s
 
   //Sensors Block End
@@ -211,17 +212,17 @@ void loop() {
   Serial.print("Distance from Sensor 1: ");
   Serial.print(distance1);
   Serial.println(" cm");
-  sendMessage("distance1", 0, distance1, false);
+  sendMessage("distance1", String(distance1));
 
   Serial.print("Distance from Sensor 2: ");
   Serial.print(distance2);
   Serial.println(" cm");
-  sendMessage("distance2", 0, distance2, false);
+  sendMessage("distance2", String(distance2));
 
   Serial.print("Distance from Sensor 3: ");
   Serial.print(distance3);
   Serial.println(" cm");
-  sendMessage("distance3", 0, distance3, false);
+  sendMessage("distance3", String(distance3));
   //Sensors localization Block end
 
   //Relative Position Block
@@ -237,11 +238,14 @@ void loop() {
 
   float x = (distance1 * distance1 - distance2 * distance2 + 10000) / 200;
   float y = (distance1 * distance1 - distance3 * distance3 + 10000) / 200;
+//enviar x e y
 
   Serial.print("Relative Position (x, y): ");
   Serial.print(x);
+  sendMessage("x", String(x));
   Serial.print(", ");
   Serial.println(y);
+  sendMessage("y", String(y));
   // Relative Position Block
   delay (1000)
 
@@ -257,8 +261,11 @@ void loop() {
         // Print latitude and longitude
         Serial.print("Latitude: ");
         Serial.println(latitude, 6);
+        sendMessage("Latitude", String(latitude));
         Serial.print("Longitude: ");
         Serial.println(longitude, 6);
+        sendMessage("Longitude", String(longitude));
+        //enviar lat e long
       } else {
         Serial.println("GPS signal not valid");
       }
